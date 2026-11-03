@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a1628">
+  <title>海军科技 · 赛鸽成绩查询</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+      background:linear-gradient(160deg,#0a1628 0%,#12253f 40%,#0d1f36 100%);
+      color:#e8f0ff;min-height:100vh;min-height:100dvh;padding:0 14px 40px;
+    }
+    .wrap{max-width:480px;margin:0 auto}
+    .header{text-align:center;padding:40px 0 20px}
+    .logo{font-size:26px;font-weight:700;letter-spacing:4px;
+      background:linear-gradient(90deg,#4fc3f7,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .sub{font-size:12px;color:#7a9bb8;margin-top:6px;letter-spacing:1px}
+    .card{
+      background:rgba(255,255,255,.06);border:1px solid rgba(79,195,247,.25);
+      border-radius:14px;padding:18px 16px;margin-bottom:14px;
+      backdrop-filter:blur(10px);
+    }
+    label{display:block;font-size:13px;color:#a0c4e0;margin-bottom:8px}
+    input{
+      width:100%;height:48px;background:rgba(0,0,0,.35);
+      border:1.5px solid rgba(79,195,247,.4);border-radius:10px;
+      padding:0 14px;font-size:16px;color:#fff;outline:none;letter-spacing:.5px;
+    }
+    input:focus{border-color:#4fc3f7;box-shadow:0 0 0 3px rgba(79,195,247,.2)}
+    input::placeholder{color:#5a7a9a;font-size:14px}
+    .btn{
+      width:100%;height:48px;margin-top:14px;
+      background:linear-gradient(135deg,#0288d1,#03a9f4);
+      border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:600;
+      letter-spacing:2px;display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn:active{opacity:.9;transform:scale(.98)}
+    .btn:disabled{opacity:.55;pointer-events:none}
+    .tips{font-size:11px;color:#6b8aa8;text-align:center;margin-top:12px;line-height:1.55}
+    .status{text-align:center;padding:16px;font-size:13px;color:#81d4fa;display:none}
+    .status.show{display:block}
+    .result{display:none}
+    .result.show{display:block}
+    .r-head{
+      background:rgba(2,136,209,.28);padding:11px 14px;border-radius:12px 12px 0 0;
+      font-size:13px;color:#81d4fa;
+    }
+    .r-body{background:rgba(0,0,0,.22);border-radius:0 0 12px 12px;overflow:hidden}
+    .race{border-bottom:1px solid rgba(255,255,255,.06);padding:13px 14px}
+    .race:last-child{border-bottom:none}
+    .race-title{font-size:14px;color:#b3e5fc;margin-bottom:7px;font-weight:500}
+    .race-row{display:flex;justify-content:space-between;font-size:12.5px;padding:2.5px 0}
+    .race-row .k{color:#78909c}
+    .race-row .v{color:#e0f7fa;font-weight:500}
+    .rank{color:#ffd54f!important;font-weight:700}
+    .champion{color:#ff8a65!important}
+    .src{margin-top:4px}
+    .src a{color:#4fc3f7;font-size:11px;text-decoration:none}
+    .empty{padding:24px;text-align:center;color:#90a4ae;font-size:13px}
+    .footer{text-align:center;font-size:11px;color:#4a6a88;margin-top:28px;line-height:1.6}
+    .spin{
+      width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;display:none;
+    }
+    .btn.loading .spin{display:block}
+    .btn.loading .txt{display:none}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">海军科技</div>
+    <div class="sub">林甸乐天协会 · 实时成绩查询</div>
+  </div>
+
+  <div class="card">
+    <label for="ring">输入足环号</label>
+    <input type="text" id="ring" placeholder="例如：2026-08-0493701 或 26-08-0493701" enterkeyhint="search">
+    <button class="btn" id="btn" onclick="doQuery()">
+      <span class="txt">查 成 绩</span>
+      <span class="spin"></span>
+    </button>
+    <div class="tips">数据来源：赛鸽资讯网 saige.com<br>协会公开发布成绩表 · 完全免费 · 实时抓取</div>
+  </div>
+
+  <div class="status" id="status">正在实时查询各场比赛…</div>
+
+  <div class="result" id="result">
+    <div class="r-head" id="rHead"></div>
+    <div class="r-body" id="rBody"></div>
+  </div>
+
+  <div class="footer">
+    海军科技 · 仅展示协会公开成绩<br>
+    成绩以源站为准
+  </div>
+</div>
+
+<script>
+const ringInput = document.getElementById("ring");
+const btn = document.getElementById("btn");
+const statusEl = document.getElementById("status");
+const resultEl = document.getElementById("result");
+const rHead = document.getElementById("rHead");
+const rBody = document.getElementById("rBody");
+
+ringInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") doQuery();
+});
+
+async function doQuery() {
+  const ring = ringInput.value.trim().replace(/\s+/g, "");
+  if (!ring || !/\d{4,}/.test(ring)) {
+    alert("请输入有效足环号");
+    ringInput.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.classList.add("loading");
+  statusEl.classList.add("show");
+  statusEl.textContent = "正在实时查询各场比赛…";
+  resultEl.classList.remove("show");
+
+  try {
+    const res = await fetch("/api/query?ring=" + encodeURIComponent(ring));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "查询失败");
+
+    statusEl.classList.remove("show");
+    render(data);
+  } catch (err) {
+    statusEl.textContent = "查询失败：" + (err.message || err);
+    statusEl.style.color = "#ef9a9a";
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("loading");
+  }
+}
+
+function render(data) {
+  rHead.textContent = `足环号 ${data.ring} · 共上榜 ${data.count} 场`;
+  if (!data.results || data.results.length === 0) {
+    rBody.innerHTML = `<div class="empty">未在已收录成绩表中找到该足环号<br>可能尚未参赛或成绩未公布</div>`;
+  } else {
+    let html = "";
+    data.results.forEach((r, i) => {
+      const isChamp = r.rank === "1";
+      html += `<div class="race">
+        <div class="race-title">${i + 1}. ${r.race}</div>
+        <div class="race-row"><span class="k">名次</span><span class="v rank ${isChamp ? "champion" : ""}">第 ${r.rank || "-"} 名${isChamp ? " · 冠军" : ""}</span></div>
+        ${r.owner ? `<div class="race-row"><span class="k">鸽主</span><span class="v">${r.owner}</span></div>` : ""}
+        ${(r.sex || r.color) ? `<div class="race-row"><span class="k">性别/羽色</span><span class="v">${[r.sex, r.color].filter(Boolean).join(" · ")}</span></div>` : ""}
+        ${r.speed ? `<div class="race-row"><span class="k">分速</span><span class="v">${r.speed} 米/分</span></div>` : ""}
+        <div class="src"><a href="${r.source}" target="_blank">查看源站成绩表 →</a></div>
+      </div>`;
+    });
+    rBody.innerHTML = html;
+  }
+  resultEl.classList.add("show");
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+</body>
+</html>
